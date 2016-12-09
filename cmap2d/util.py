@@ -88,7 +88,7 @@ def plot_cmap(cmap, show=True, ax=plt, scale=4, bounds=None, constrain=False,
     ax.imshow(colors, origin='lower')
 
     if not constrained:
-        plot_bounds(bounds ,ax, scale=scale)
+        plot_bounds(bounds, ax, scale=scale)
     if show:
         plt.show()
 
@@ -107,7 +107,7 @@ def eval_cmap(cmap, vmax=100, filter=lambda x,y: x+y <= 100, scale=1):
                     res = (0,0,0)
                 if np.any(np.isnan(res)):
                     print((x,y), res)
-                    colors[j][i] = res
+                colors[j][i] = res
             else:
                 colors[j][i] = (0,0,0)
     return colors
@@ -178,7 +178,7 @@ def run_tests(classes, shapes, scale=4, constrain=True):
     for i,cls in enumerate(classes):
         for j,shape in enumerate(shapes):
             print("plotting", cls.__name__, 'shape', j)
-            coords, vert_colors = shape[:]
+            coords, vert_colors = shape[:2]
             cmap = cls(*shape)
             ax = axes[i][j]
 
