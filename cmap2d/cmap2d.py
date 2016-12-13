@@ -76,23 +76,19 @@ class SimplexColorMap(ColorMapBase):
         return out.tolist()[0]
 
 class AvgColorMap(ColorMapBase):
+    """Simple class, maps input to color based on weighted average of inverse of
+    distance to all color coordinates."""
+
     def __init__(self, *args):
         super().__init__(*args)
         self._max_dist = 10000
 
     def __call__(self, point):
         distances = la.norm(self._coords-np.array(point), axis=1, ord=2)
-#         print("d1", distances)
-#         distances = [[max(self._max_dist-la.norm(util.project(-c, p-c)), 0) for c in self._shape_coords] for p in nps]
-#         np.clip(distances, 0, self._max_dist, distances)
-#         distances = 1-distances/self._max_dist
-#         distances = self._max_dist - distances
         distances = self._max_dist/distances
-#         print("d2", distances)
         if np.max(distances) < __SLACK__:
             return self._oob_color
         color = np.dot(distances, self._colors)
-#         print(distances, color)
         if np.max(color) > 1:
             color /= np.max(color)
         np.clip(color, 0, 1, color)
