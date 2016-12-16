@@ -75,7 +75,7 @@ def collinear(p1,p2,p3):
     m = np.array([[x2-x1, y2-y1], [x3-x1, y3-y1]])
     return abs(la.det(m)) < __SLACK__
 
-def plot_cmap(cmap, scale=4, vmax=None, ax=None, constrain=False,
+def plot_cmap(cmap, scale=4, buffer=0, vmax=None, ax=None, constrain=False,
               show_colors=False, show=True):
     if vmax is None:
         vmax = int(np.max(cmap._coords)*1.09)
@@ -85,28 +85,32 @@ def plot_cmap(cmap, scale=4, vmax=None, ax=None, constrain=False,
     else:
         test = lambda x,y: True
 
-    data = eval_cmap(cmap, vmax=vmax, filter=test, scale=scale)
+    data, xmin, xmax, ymin, ymax = eval_cmap(cmap, vmax=vmax, filter=test,
+                                             scale=scale, buffer=buffer)
 
     if ax is None:
         ax = plt.gca()
 
-    ax.imshow(data, origin='lower')
+    ax.imshow(data, origin='lower', extent=(xmin, xmax, ymin, ymax))
 
     if not constrain:
-        plot_bounds(cmap._coords, ax=ax, scale=scale)
+        plot_bounds(cmap._coords, ax=ax)
     if show_colors:
-        plot_color_points(cmap._coords, cmap._colors, ax=ax, scale=scale)
+        plot_color_points(cmap._coords, cmap._colors, ax=ax)
+    ax.set_xlim([xmin, xmax])
+    ax.set_ylim([ymin, ymax])
     if show:
-        ax.set_xlim([0, vmax/scale])
-        ax.set_ylim([0, vmax/scale])
         plt.show()
 
-def eval_cmap(cmap, vmax=100, filter=lambda x,y: x+y <= 100, scale=1):
+def eval_cmap(cmap, vmax=100, filter=lambda x,y: True, scale=1, buffer=0):
     cmap.verbose = False
-    n = vmax//scale + 1
-    xs = np.linspace(0, vmax, n)
-    xv, yv = np.meshgrid(xs, xs)
-    colors = np.zeros([n,n]).tolist()
+    xmax,ymax = np.max(cmap._coords, axis=0)
+    xmin,ymin = np.min(cmap._coords, axis=0)
+    n = 100//scale + 1
+    xs = np.linspace(xmin-buffer, xmax+buffer, n)
+    ys = np.linspace(ymin-buffer, ymax+buffer, n)
+    xv, yv = np.meshgrid(xs, ys)
+    colors = np.zeros([n, n]).tolist()
     for i in range(n):
         for j in range(n):
             x,y = (xv[j,i], yv[j,i])
@@ -119,22 +123,22 @@ def eval_cmap(cmap, vmax=100, filter=lambda x,y: x+y <= 100, scale=1):
                 colors[j][i] = res
             else:
                 colors[j][i] = (0,0,0)
-    return colors
+    return colors, xmin-buffer, xmax+buffer, ymin-buffer, ymax+buffer
 
-def plot_bounds(corners, ax=None, scale=1):
+def plot_bounds(corners, ax=None):
     n = len(corners)
     if ax is None:
         ax = plt.gca()
     for i in range(n):
         x1,y1 = corners[i]
         x2,y2 = corners[(i+1)%n]
-        ax.plot([x1/scale,x2/scale], [y1/scale,y2/scale], 'k', linewidth=1)
+        ax.plot([x1,x2], [y1,y2], 'k', linewidth=1)
 
-def plot_color_points(coords, colors, scale=1, radius=5, ax=None):
+def plot_color_points(coords, colors, radius=5, ax=None):
     if ax is None:
         ax = plt.gca()
     for coord, color in zip(coords, colors):
-        ax.scatter(coord[0]/scale, coord[1]/scale, color=color,
+        ax.scatter(coord[0], coord[1], color=color,
                    edgecolors=(.5,.5,.5,.5), s=np.pi*radius**2)
 
 def plot_color_triangles(colors):
